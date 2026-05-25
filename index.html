@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K230 智能多模态同传翻译官终端</title>
+    <style>
+        body {
+            background-color: #0a0f1d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00ffcc;
+            padding-bottom: 10px;
+            width: 80%;
+            max-width: 800px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #00ffcc;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0,255,204,0.5);
+        }
+        .status-container {
+            font-size: 14px;
+            color: #8a99ad;
+            margin-top: 5px;
+        }
+        .status-badge {
+            background: #1e293b;
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: #00ffcc;
+            border: 1px solid #334155;
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 80%;
+            max-width: 800px;
+            flex: 1;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #00ffcc;
+            box-shadow: 0 4px 30px rgba(0, 255, 204, 0.2);
+        }
+        .card-title {
+            font-size: 14px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ffcc;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ffcc;
+        }
+        .content-text {
+            font-size: 22px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            min-height: 33px;
+        }
+        #translated-box {
+            color: #ffea00;
+            text-shadow: 0 0 5px rgba(255,234,0,0.2);
+        }
+        .footer {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>K230 智能多模态同传翻译官终端</h1>
+        <div class="status-container">
+            设备状态: <span id="system-status" class="status-badge">初始化中...</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="card">
+            <div class="card-title">K230 边缘采集文本 (Original English)</div>
+            <div id="raw-box" class="content-text">等待硬件输入...</div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid #ffea00;">
+            <div class="card-title" style="color: #ffea00;">DeepSeek 智能同传译文 (Chinese Translation)</div>
+            <div id="translated-box" class="content-text">等待翻译结果...</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        东莞城市学院 - 人工智能学院 期末设计成果
+    </div>
+
+    <script>
+        // 每隔 1 秒（1000毫秒）自动向 Flask 后端请求一次最新数据，实现免刷新实时大屏同步
+        function updateUI() {
+            fetch('http://localhost:5000/get_ui_data')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('system-status').innerText = data.status;
+                    document.getElementById('raw-box').innerText = data.raw_text || "等待硬件输入...";
+                    document.getElementById('translated-box').innerText = data.translated_text || "等待翻译结果...";
+                    
+                    // 如果正在翻译，改变状态标签颜色
+                    let badge = document.getElementById('system-status');
+                    if(data.status === "翻译完成！") {
+                        badge.style.color = "#00ffcc";
+                        badge.style.borderColor = "#00ffcc";
+                    } else if(data.status.includes("正在")) {
+                        badge.style.color = "#ffea00";
+                        badge.style.borderColor = "#ffea00";
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('system-status').innerText = "断开与中继服务器的连接";
+                    document.getElementById('system-status').style.color = "#ff4a4a";
+                });
+        }
+
+        // 启动定时器
+        setInterval(updateUI, 1000);
+        updateUI(); // 开局先执行一次
+    </script>
+</body>
+</html>
